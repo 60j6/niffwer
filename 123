@@ -64,6 +64,11 @@ local meleeChoices = {
 		Switch = "Sickle"
 	},
 	{
+		Name = "Killbrick Melee",
+		Quality = "Epic",
+		Switch = "Brick"
+	},
+	{
 		Name = "Bouquet",
 		Quality = "Common",
 		Event = "Valentines",
