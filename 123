@@ -1,0 +1,1097 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local qualityFolder = ReplicatedStorage:WaitForChild("ItemData"):WaitForChild("Quality")
+local imageFolder = ReplicatedStorage:WaitForChild("ItemData"):WaitForChild("Images"):WaitForChild("Melees")
+local meleesFolder = ReplicatedStorage:WaitForChild("Melees")
+local player = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local CollectionService = game:GetService("CollectionService")
+local favwep = ReplicatedStorage:FindFirstChild("FavoriteWeapons")
+local Debris = Workspace:WaitForChild("Debris")
+local weaponsFolder = ReplicatedStorage:WaitForChild("Weapons")
+local KillFeed = workspace:WaitForChild("KillFeed")
+
+
+-- Values
+local data = player:WaitForChild("Data")
+local meleeValue = data:WaitForChild("Melee")
+local playermodelValue = data:WaitForChild("Skin")
+local gunskinValue = player:WaitForChild("Equipped")
+local viewmodelValue = playermodelValue:WaitForChild("Sleeve")
+
+--[[
+local meleeChoice = "ACT Trophy"
+local qualityValue = qualityFolder:FindFirstChild("Unknown")
+
+local meleeChoice2 = "Let The Skies Fall"
+local qualityValue2 = qualityFolder:FindFirstChild("Remains of a Comet")
+]]
+
+local meleeChoices = {
+    {
+        Name = "ACT Trophy",
+        Quality = "Promo",
+        Switch = "Balloon Sword"
+    },
+    {
+        Name = "Let The Skies Fall",
+        Quality = "Remains of a Comet",
+        Switch = "Mop"
+    },
+	{
+		Name = "Da Melee",
+		Quality = "Bundle",
+		Switch = "Calculator"
+	},
+	{
+		Name = "Assimilator",
+		Quality = "Bundle",
+		Switch = "Can Mace"
+	},
+	{
+		Name = "Pumpkin Staff",
+		Quality = "Epic",
+		Switch = "Paddle"
+	},
+	{
+		Name = "Moderation Hammer",
+		Quality = "Promo",
+		Switch = "Sledgehammer"
+	},
+	{
+		Name = "Rubber Hammer",
+		Quality = "Epic",
+		Switch = "Sickle"
+	},
+	{
+		Name = "Bouquet",
+		Quality = "Common",
+		Event = "Valentines",
+		Switch = "Baton"
+	},
+	{
+		Name = "Bat",
+		Quality = "Common",
+		Event = "Summer",
+		Switch = "Newspaper"
+	},
+	{
+		Name = "Bloxy",
+		Quality = "Promo",
+		Switch = "Combat Knife"
+	},
+	{
+		Name = "Swordfish",
+		Quality = "Epic",
+		Event = "Christmas",
+		Switch = "Fish"
+	},
+	{
+		Name = "Icicle",
+		Quality = "Epic",
+		Event = "Christmas",
+		Switch = "Tactical Knife"
+	},
+	{
+		Name = "Wrench",
+		Quality = "Epic",
+		Event = "Summer",
+		Switch = "Rusty Pipe"
+	},
+	{
+		Name = "The Darkheart",
+		Quality = "Legendary-Old",
+		Switch = "Classic Sword"
+	},
+	{
+		Name = "OG Space Katana",
+		Quality = "Legendary-Old",
+		Event = "Galactic Assault",
+		Switch = "Khopesh"
+	},
+	{
+		Name = "Space Katana",
+		Quality = "Legendary",
+		Event = "Galactic Assault",
+		Switch = "Katana"
+	},
+	{
+		Name = "Scythe",
+		Quality = "Epic",
+		Event = "Halloween",
+		Switch = "Bat Axe"
+	},
+	{
+		Name = "Seal",
+		Quality = "Bundle",
+		Switch = "Crowbar"
+	},
+	{
+		Name = "Handy Candy",
+		Quality = "Epic",
+		Event = "Halloween",
+		Switch = "Kunai"
+	},
+}
+
+--[[
+Christmas	
+Galactic Assault
+Galactic Cowboy
+Halloween
+July
+Regretevator
+Summer
+Throwback
+Valentines
+]]
+
+--[[
+Admin
+Bundle
+Common
+Default
+Epic
+Legendary
+Legendary-Old
+Mythic
+Promo
+Quest Item
+Rare
+Remains of a Comet
+Retired
+Unknown
+]]
+
+local skinChoice = "1x1x1"
+local weaponName = "Very Long Bat"
+
+
+--meleeValue.Value = meleeChoice
+--viewmodelValue.Value = skinChoice
+gunskinValue.Value = "Creator"
+--playermodelValue.Value = skinChoice
+
+local function applyModel(model)
+    for _, item in ipairs(model:GetDescendants()) do
+        if (item:IsA("BasePart") or item:IsA("MeshPart")) and item.Name == "Model" then
+            item:Destroy()
+        end
+    end
+
+    local weapon = weaponsFolder:FindFirstChild(weaponName)
+    if not weapon then return end
+
+    local weaponModel = weapon:FindFirstChild("Model")
+    if not (weaponModel and weaponModel:IsA("MeshPart")) then return end
+
+    local clonedWeapon = weaponModel:Clone()
+    clonedWeapon.Parent = model
+    clonedWeapon.Anchored = false
+    clonedWeapon.CanCollide = false
+
+    local gunWeld = weaponModel:FindFirstChild("GunWeld")
+    local rightHand = model:FindFirstChild("RightHand")
+
+    if gunWeld and rightHand then
+        local newGunWeld = Instance.new("Weld")
+        newGunWeld.Name = "GunWeld"
+        newGunWeld.Part0 = rightHand
+        newGunWeld.Part1 = clonedWeapon
+        newGunWeld.C0 = gunWeld.C0
+        newGunWeld.C1 = gunWeld.C1
+        newGunWeld.Parent = clonedWeapon
+    end
+
+    local humanoid = model:FindFirstChildWhichIsA("Humanoid")
+    if humanoid then
+        local animator = humanoid:FindFirstChildWhichIsA("Animator")
+            or Instance.new("Animator", humanoid)
+
+        local equipAnim = weapon:FindFirstChild("Equip", true)
+        local idleAnim = weapon:FindFirstChild("Idle", true)
+
+        if equipAnim and idleAnim then
+            local equipTrack = animator:LoadAnimation(equipAnim)
+            local idleTrack = animator:LoadAnimation(idleAnim)
+
+            equipTrack:Play()
+            equipTrack.Stopped:Once(function()
+                idleTrack.Looped = true
+                idleTrack:Play()
+            end)
+        end
+    end
+end
+
+local function applyToMatchingModels()
+    local targetName = playermodelValue.Value
+    if not targetName or targetName == "" then return end
+
+    for _, obj in ipairs(workspace:GetChildren()) do
+        if obj:IsA("Model") and obj.Name == targetName then
+        end
+    end
+end
+
+applyToMatchingModels()
+
+workspace.ChildAdded:Connect(function(child)
+    if child:IsA("Model") and child.Name == playermodelValue.Value then
+    end
+end)
+
+playermodelValue.Changed:Connect(function()
+    applyToMatchingModels()
+end)
+
+local Menew = player:WaitForChild("PlayerGui"):WaitForChild("Menew")
+local button = Menew:WaitForChild("Locker"):WaitForChild("Slots"):WaitForChild("Melees")
+
+local playerGui = player:WaitForChild("PlayerGui")
+local locker = playerGui:WaitForChild("Menew"):WaitForChild("Locker")
+
+local imageFolder = ReplicatedStorage:WaitForChild("ItemData"):WaitForChild("Images"):WaitForChild("Melees")
+local qualityFolder = ReplicatedStorage:WaitForChild("ItemData"):WaitForChild("Quality")
+
+local locker = playerGui:WaitForChild("Menew"):WaitForChild("Locker")
+
+local oldImageId = nil
+
+
+local playerGui = player:WaitForChild("PlayerGui")
+local locker = playerGui:WaitForChild("Menew"):WaitForChild("Locker")
+
+local slots = locker:WaitForChild("Slots")
+local melees = slots:WaitForChild("Melees")
+local equipFrame = locker:WaitForChild("Equipping")
+local scrolling = equipFrame:WaitForChild("ScrollingFrame")
+
+task.spawn(function()
+    local actImageValue = imageFolder:WaitForChild(meleeChoices[1].Name)
+    local ACT_IMAGE = actImageValue.Value
+
+    while true do
+
+        local equipFrame = locker:FindFirstChild("Equipping")
+        local scrolling = equipFrame and equipFrame:FindFirstChild("ScrollingFrame")
+
+        if scrolling then
+            for _, config in ipairs(meleeChoices) do
+                local frame = scrolling:FindFirstChild(config.Switch)
+
+                local imgValue = imageFolder:FindFirstChild(config.Name)
+                local qValue = qualityFolder:FindFirstChild(config.Quality)
+
+                if frame then
+					local textLabel = frame:FindFirstChild("TextLabel")
+					local imageLabel = frame:FindFirstChild("Item")
+					local quality = frame:FindFirstChild("Quality")
+
+					--[[if frame.Name ~= config.Name then
+						frame.Name = config.Name
+					end]]
+
+					if textLabel then
+						textLabel.Text = config.Name
+					end
+
+					if imageLabel and imgValue then
+						imageLabel.Image = imgValue.Value
+					end
+
+					if quality and qValue then
+						quality.ImageColor3 = qValue.Value
+					end
+					
+					local eventImage = frame:FindFirstChild("EventImage")
+
+					if eventImage then
+						if config.Event then
+							local eventFolder = ReplicatedStorage:WaitForChild("ItemData")
+								:WaitForChild("Images")
+								:WaitForChild("EventIcons")
+
+							local eventValue = eventFolder:FindFirstChild(config.Event)
+
+							if eventValue then
+								eventImage.Image = eventValue.Value
+								eventImage.Visible = true
+							else
+								eventImage.Visible = false
+							end
+						else
+							eventImage.Visible = false
+						end
+					end
+				end
+            end
+        end
+
+        if actImageValue.Value ~= ACT_IMAGE then
+            ACT_IMAGE = actImageValue.Value
+        end
+
+		local function updateCloneLabel(label)
+			if label and label:IsA("TextLabel") then
+				label.Text = meleeValue.Value
+			end
+		end
+
+		local function watchCloneLabel()
+			local function handle(child)
+				if child.Name == "CloneLabel" and child:IsA("TextLabel") then
+					updateCloneLabel(child)
+
+					meleeValue:GetPropertyChangedSignal("Value"):Connect(function()
+						if child.Parent then 
+							updateCloneLabel(child)
+						end
+					end)
+				end
+			end
+
+			for _, v in ipairs(melees:GetChildren()) do
+				handle(v)
+			end
+
+			melees.ChildAdded:Connect(function(child)
+				task.wait()
+				handle(child)
+			end)
+		end
+
+		watchCloneLabel()
+
+        task.wait(0.2)
+    end
+end)
+
+local function watchSlots()
+    local meleeSlots = locker:FindFirstChild("Slots")
+    if not meleeSlots then return end
+
+    meleeSlots = meleeSlots:FindFirstChild("Melees")
+    if not meleeSlots then return end
+
+    local function hook(slot)
+        local img = slot:FindFirstChild("ImageLabel")
+        if not img then return end
+
+        local function enforce()
+            if oldImageId and img.Image == oldImageId then
+                img.Image = ACT_IMAGE
+            end
+        end
+
+        enforce()
+        img:GetPropertyChangedSignal("Image"):Connect(enforce)
+    end
+
+    for _, v in ipairs(meleeSlots:GetChildren()) do
+        hook(v)
+    end
+
+    meleeSlots.ChildAdded:Connect(function(child)
+        task.wait()
+        hook(child)
+    end)
+end
+
+favwep.Joe.Value = "ACT Trophy"
+
+local function isJoeSkin()
+	return player:FindFirstChild("Data")
+		and player.Data:FindFirstChild("Skin")
+		and player.Data.Skin.Value == "Joe"
+end
+
+local function applyJoeFakeHeadColor(character)
+	if not isJoeSkin() then return end
+
+	local fakeHead = character:FindFirstChild("FakeHead")
+	if not fakeHead or not fakeHead:IsA("BasePart") then return end
+
+	local dummyBodyColors = AvatarDummy:FindFirstChildOfClass("BodyColors")
+	if not dummyBodyColors then return end
+
+	fakeHead.Color = dummyBodyColors.HeadColor
+end
+
+local function createAvatarDummy()
+	local tempDummy = Instance.new("Model")
+	tempDummy.Name = "TempAvatarDummy"
+	tempDummy.Parent = Workspace
+
+	local hrp = Instance.new("Part")
+	hrp.Name = "HumanoidRootPart"
+	hrp.Size = Vector3.new(2, 2, 1)
+	hrp.Anchored = true
+	hrp.CFrame = CFrame.new(0, 5, 0)
+	hrp.Parent = tempDummy
+
+	local humanoid = Instance.new("Humanoid")
+	humanoid.Parent = tempDummy
+
+	local desc = Players:GetHumanoidDescriptionFromUserId(player.UserId)
+	humanoid:ApplyDescription(desc)
+
+	task.wait(0.2)
+
+	local dummy = Instance.new("Model")
+	dummy.Name = "AvatarDummy"
+
+	for _, obj in ipairs(tempDummy:GetChildren()) do
+		if obj:IsA("Accessory")
+			or obj:IsA("Hat")
+			or obj:IsA("Shirt")
+			or obj:IsA("Pants")
+			or obj:IsA("ShirtGraphic")
+			or obj:IsA("BodyColors") then
+			obj:Clone().Parent = dummy
+		end
+	end
+
+	dummy.Parent = ReplicatedStorage
+	tempDummy:Destroy()
+end
+
+if not ReplicatedStorage:FindFirstChild("AvatarDummy") then
+	createAvatarDummy()
+end
+
+local AvatarDummy = ReplicatedStorage:WaitForChild("AvatarDummy")
+
+local function stripCharacter(character)
+	for _, obj in ipairs(character:GetChildren()) do
+		if obj:IsA("Accessory")
+			or obj:IsA("Hat")
+			or obj:IsA("Shirt")
+			or obj:IsA("Pants")
+			or obj:IsA("ShirtGraphic")
+			or obj:IsA("BodyColors") then
+			obj:Destroy()
+		end
+	end
+
+	local face = character:FindFirstChild("face")
+	if face then face:Destroy() end
+end
+
+local function removeOldHandles(character)
+	for _, obj in ipairs(character:GetChildren()) do
+		if obj:IsA("BasePart")
+			and obj.Name == "Handle"
+			and obj:FindFirstChild("AccessoryWeld") then
+			obj:Destroy()
+		end
+	end
+end
+
+local function removeJoeAccessories(character)
+	for _, obj in ipairs(character:GetChildren()) do
+		if obj:IsA("BasePart") and CollectionService:HasTag(obj, "JoeAccessory") then
+			obj:Destroy()
+		end
+	end
+end
+
+local function removeJoeClothing(character)
+	for _, obj in ipairs(character:GetChildren()) do
+		if (obj:IsA("Shirt") or obj:IsA("Pants") or obj:IsA("ShirtGraphic"))
+			and CollectionService:HasTag(obj, "JoeClothing") then
+			obj:Destroy()
+		end
+	end
+end
+
+local attachmentMap = {
+	HatAttachment = "HatAttachment",
+	HairAttachment = "HairAttachment",
+	FaceCenterAttachment = "FaceCenterAttachment",
+	FaceFrontAttachment = "FaceFrontAttachment",
+	NeckAttachment = "NeckRigAttachment",
+
+	BodyFrontAttachment = "BodyFrontAttachment",
+	BodyBackAttachment = "BodyBackAttachment",
+	BodyBottomAttachment = "BodyBottomAttachment",
+	BodyTopAttachment = "BodyTopAttachment",
+
+	RightGripAttachment = "RightGripAttachment",
+	LeftGripAttachment = "LeftGripAttachment",
+	RightShoulderAttachment = "RightShoulderRigAttachment",
+	LeftShoulderAttachment = "LeftShoulderRigAttachment",
+
+	RightFootAttachment = "RightFootAttachment",
+	LeftFootAttachment = "LeftFootAttachment",
+	RightUpperLegAttachment = "RightUpperLegAttachment",
+	LeftUpperLegAttachment = "LeftUpperLegAttachment",
+
+	RootAttachment = "RootAttachment",
+}
+
+local function attachAccessory(accessory, character)
+	local handle = accessory:FindFirstChild("Handle")
+	if not handle then return end
+
+	local accAttachment
+	for _, att in ipairs(handle:GetChildren()) do
+		if att:IsA("Attachment") and attachmentMap[att.Name] then
+			accAttachment = att
+			break
+		end
+	end
+
+	handle.Parent = character
+	handle.Massless = true
+	handle.Anchored = false
+	handle.CanCollide = false
+	
+	CollectionService:AddTag(handle, "JoeAccessory")
+
+	if accAttachment then
+		local targetName = attachmentMap[accAttachment.Name]
+		for _, att in ipairs(character:GetDescendants()) do
+			if att:IsA("Attachment") and att.Name == targetName then
+				local weld = Instance.new("Weld")
+				weld.Name = "AccessoryWeld"
+				weld.Part0 = handle
+				weld.Part1 = att.Parent
+				weld.C0 = handle.CFrame:ToObjectSpace(accAttachment.WorldCFrame)
+				weld.C1 = att.Parent.CFrame:ToObjectSpace(att.WorldCFrame)
+				weld.Parent = handle
+				handle.CFrame = att.WorldCFrame * weld.C1:Inverse() * weld.C0
+				return
+			end
+		end
+	end
+
+	local root = character:FindFirstChild("HumanoidRootPart")
+	if root then
+		local weld = Instance.new("Weld")
+		weld.Name = "AccessoryWeld"
+		weld.Part0 = handle
+		weld.Part1 = root
+		weld.Parent = handle
+		handle.CFrame = root.CFrame
+	end
+end
+
+local function applyAvatar(character)
+	removeJoeAccessories(character)
+	removeJoeClothing(character)
+
+	if not isJoeSkin() then return end
+
+	stripCharacter(character)
+
+	for _, obj in ipairs(AvatarDummy:GetChildren()) do
+		if obj:IsA("Accessory") or obj:IsA("Hat") then
+			attachAccessory(obj:Clone(), character)
+		else
+			local clone = obj:Clone()
+			clone.Parent = character
+
+			if clone:IsA("Shirt") or clone:IsA("Pants") or clone:IsA("ShirtGraphic") then
+				CollectionService:AddTag(clone, "JoeClothing")
+			end
+		end
+	end
+
+	applyJoeFakeHeadColor(character)
+end
+if isJoeSkin() then
+	local character = player.Character or player.CharacterAdded:Wait()
+
+	local ArmsFolder = ReplicatedStorage.Viewmodels.Arms.Joe
+	local left = ArmsFolder:WaitForChild("Left Arm")
+	local right = ArmsFolder:WaitForChild("Right Arm")
+
+	left.Transparency = 0
+	right.Transparency = 0
+	--left.BrickColor = BrickColor.new("Really black")
+	--right.BrickColor = BrickColor.new("Really black")
+
+	local function cleanOld(original)
+		for _, child in ipairs(original:GetChildren()) do
+			if child.Name == "AppearanceArm"
+				or child.Name == "Sleeve"
+				or child.Name == "Cuff" then
+				child:Destroy()
+			end
+		end
+	end
+
+	cleanOld(left)
+	cleanOld(right)
+
+	local function setupArm(original)
+		cleanOld(original)
+
+		local clone = original:Clone()
+		clone.Name = "AppearanceArm"
+		clone.Transparency = 0
+		clone.Parent = original
+
+		local weld = Instance.new("Weld")
+		weld.Part0 = original
+		weld.Part1 = clone
+		weld.Parent = original
+
+		weld.C0 =
+			CFrame.Angles(
+				math.rad(90),
+				math.rad(-180),
+				0
+			)
+
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.FileMesh
+
+		if original.Name == "Right Arm" then
+			mesh.MeshId = "rbxassetid://6480732910"
+		else
+			mesh.MeshId = "rbxassetid://6480732189"
+		end
+
+		mesh.Scale = Vector3.new(0,0,0) --0.483, 0.649, 0.486
+		mesh.Offset = Vector3.new(0, -0.7, 0)
+		mesh.Parent = clone
+
+		return clone
+	end
+
+	local leftCl = setupArm(left)
+	local rightCl = setupArm(right)
+
+	local function createSleeveAndCuff(arm, sleeveMeshId, cuffMeshId)
+
+		local sleeve = Instance.new("Part")
+		sleeve.Name = "Sleeve"
+		sleeve.Transparency = 0
+		sleeve.CanCollide = false
+		sleeve.Size = arm.Size
+		sleeve.Parent = arm
+
+		local sleeveMesh = Instance.new("SpecialMesh")
+		sleeveMesh.MeshType = Enum.MeshType.FileMesh
+		sleeveMesh.MeshId = "rbxassetid://" .. sleeveMeshId
+		sleeveMesh.TextureId = "rbxassetid://16750494056"
+		sleeveMesh.Scale = Vector3.new(1.45, 1.45, 1.45)
+		sleeveMesh.Parent = sleeve
+
+		local sleeveWeld = Instance.new("Weld")
+		sleeveWeld.Part0 = arm
+		sleeveWeld.Part1 = sleeve
+		sleeveWeld.C0 =
+			CFrame.Angles(math.rad(90), math.rad(0), 0)
+			* CFrame.new(0, 0, -0.5)
+		sleeveWeld.Parent = sleeve
+
+		local cuff = Instance.new("Part")
+		cuff.Name = "Cuff"
+		cuff.Transparency = 0
+		cuff.CanCollide = false
+		cuff.Size = arm.Size
+		cuff.BrickColor = BrickColor.new("Pearl")
+		cuff.Parent = sleeve
+
+		local cuffMesh = Instance.new("SpecialMesh")
+		cuffMesh.MeshType = Enum.MeshType.FileMesh
+		cuffMesh.MeshId = "rbxassetid://" .. cuffMeshId
+		cuffMesh.Scale = Vector3.new(1.35,1.35,1.35)
+		cuffMesh.Parent = cuff
+
+		local cuffWeld = Instance.new("Weld")
+		cuffWeld.Part0 = sleeve
+		cuffWeld.Part1 = cuff
+		cuffWeld.C0 = CFrame.new(0, 0, 0.9)
+		cuffWeld.Parent = cuff
+	end
+
+	createSleeveAndCuff(leftCl, "133137813955717", "125842413666885")
+	createSleeveAndCuff(rightCl, "85929700472593", "135935711269122")
+
+	local function updateDecals()
+		local shirt = character:FindFirstChildOfClass("Shirt")
+		local tex = shirt and shirt.ShirtTemplate
+
+		for _, arm in ipairs({ leftCl, rightCl }) do
+			for _, d in ipairs(arm:GetChildren()) do
+				if d:IsA("Decal") then
+					d:Destroy()
+				end
+			end
+
+			if tex then
+				local decal = Instance.new("Decal")
+				decal.Face = Enum.NormalId.Front
+				decal.Texture = tex
+				decal.Parent = arm
+			end
+		end
+	end
+
+	updateDecals()
+
+	--[[character.ChildAdded:Connect(function(c)
+		if c:IsA("Shirt") then
+			updateDecals()
+		end
+	end)]]
+
+	--[[character.ChildRemoved:Connect(function(c)
+		if c:IsA("Shirt") then
+			updateDecals()
+		end
+	end)]]
+end
+local function handleRagdoll(model)
+	if isJoeSkin() and model:IsA("Model") and model.Name == player.Name then
+		task.wait(0.05)
+		applyAvatar(model)
+	end
+end
+
+for _, obj in ipairs(Debris:GetChildren()) do
+	handleRagdoll(obj)
+end
+
+Debris.ChildAdded:Connect(handleRagdoll)
+
+Workspace.DescendantAdded:Connect(function(obj)
+	if isJoeSkin() and obj:IsA("Model") and obj.Name == player.Data.Skin.Value then
+		task.wait(0.05)
+		applyAvatar(obj)
+	end
+end)
+
+local viewport = player.PlayerGui:WaitForChild("Menew")
+	:WaitForChild("Locker")
+	:WaitForChild("Slots")
+	:WaitForChild("Skins")
+	:WaitForChild("Item")
+	:WaitForChild("ViewportFrame")
+
+viewport.ChildAdded:Connect(function(obj)
+	if isJoeSkin() and obj:IsA("Model") and obj.Name == player.Data.Skin.Value then
+		task.wait(0.05)
+		applyAvatar(obj)
+	end
+end)
+
+player.CharacterAdded:Connect(function(character)
+	task.wait(0.1)
+	applyAvatar(character)
+end)
+
+player.Data.Skin.Changed:Connect(function()
+	if player.Character then
+		task.wait(0.05)
+		applyAvatar(player.Character)
+	end
+end)
+
+if player.Character then
+	task.wait(0.1)
+	applyAvatar(player.Character)
+end
+
+player.Data.Skin.Changed:Connect(function()
+	if player.Character then
+		task.wait(0.05)
+		applyAvatar(player.Character)
+	end
+end)
+
+task.spawn(function()
+    local slots = locker:WaitForChild("Slots")
+    local melees = slots:WaitForChild("Melees")
+    local item = melees:WaitForChild("Item")
+
+    while true do
+        local currentImage = item.Image
+
+        for _, config in ipairs(meleeChoices) do
+            local imgValue = imageFolder:FindFirstChild(config.Name)
+
+            if imgValue and imgValue.Value == currentImage then
+                if meleeValue.Value ~= config.Name then
+					task.wait(0.2)
+                    meleeValue.Value = config.Name
+                end
+                break
+            end
+        end
+
+        task.wait(0.2)
+    end
+end)
+
+for _, choice in ipairs(meleeChoices) do
+    local original = meleesFolder:FindFirstChild(choice.Name)      
+    local switchItem = meleesFolder:FindFirstChild(choice.Switch)  
+
+    if original and switchItem then
+        switchItem.Name = choice.Switch .. "_ORIGINAL"
+        local clone = original:Clone()
+        clone.Name = choice.Switch
+        clone.Parent = meleesFolder
+    else
+        warn("Missing:", choice.Name, "or", choice.Switch)
+    end
+end
+
+local cloneModel
+
+local originalState = {}
+
+local function cacheOriginal(model)
+	if originalState[model] then return end
+
+	local data = {}
+
+	for _, v in ipairs(model:GetDescendants()) do
+		if v:IsA("BasePart") then
+			data[v] = {
+				Transparency = v.Transparency,
+				CanCollide = v.CanCollide,
+				CanQuery = v.CanQuery,
+				CanTouch = v.CanTouch,
+			}
+
+		elseif v:IsA("Decal") or v:IsA("Texture") then
+			data[v] = {
+				Transparency = v.Transparency
+			}
+
+		elseif v:IsA("ParticleEmitter") then
+			data[v] = {
+				Enabled = v.Enabled
+			}
+
+		elseif v:IsA("Beam") or v:IsA("Trail") then
+			data[v] = {
+				Enabled = v.Enabled
+			}
+		end
+	end
+
+	originalState[model] = data
+end
+
+local function applyOriginal(model)
+	local data = originalState[model]
+	if not data then return end
+
+	for obj, props in pairs(data) do
+		if obj and obj.Parent then
+			for k, v in pairs(props) do
+				obj[k] = v
+			end
+		end
+	end
+end
+
+--[[local function hideModel(model)
+	for _, v in ipairs(model:GetDescendants()) do
+		if v:IsA("BasePart") then
+			v.Transparency = 1
+		elseif v:IsA("Decal") or v:IsA("Texture") then
+			v.Transparency = 1
+		elseif v:IsA("ParticleEmitter") then
+			v.Enabled = false
+		elseif v:IsA("Beam") or v:IsA("Trail") then
+			v.Enabled = false
+		end
+	end
+end]]
+
+local function setGunInvisible(gun)
+	for _, v in ipairs(gun:GetDescendants()) do
+		if v:IsA("BasePart") then
+			v.Transparency = 1
+		elseif v:IsA("Decal") or v:IsA("Texture") then
+			v.Transparency = 1
+		elseif v:IsA("ParticleEmitter") then
+			v.Enabled = false
+		elseif v:IsA("Beam") or v:IsA("Trail") then
+			v.Transparency = NumberSequence.new(1)
+		end
+	end
+end
+
+local function applyPhysics(model)
+	for _, v in ipairs(model:GetDescendants()) do
+		if v:IsA("BasePart") or v:IsA("Meshpart") then
+			v.Massless = true
+			v.CanTouch = false
+			v.CanQuery = false
+			v.CanCollide = false
+		end
+	end
+end
+
+local function applyTeamColor(model)
+	local teamColor = player.TeamColor.Color
+
+	for _, v in ipairs(model:GetDescendants()) do
+		if (v:IsA("BasePart") or v:IsA("MeshPart")) and string.find(string.lower(v.Name), "teamcolor") then
+			v.BrickColor = BrickColor.new(teamColor)
+		end
+	end
+end
+
+local function attach(wrap)
+	if cloneModel then return end
+
+	local meleeFolder = meleesFolder:FindFirstChild(meleeValue.Value)
+	if not meleeFolder then return end
+
+	local model = meleeFolder:FindFirstChild("Model")
+	if not model then return end
+
+	cloneModel = model:Clone()
+	cloneModel.Parent = player.Character
+
+	cacheOriginal(cloneModel)
+
+	applyPhysics(cloneModel)
+	applyTeamColor(cloneModel)
+
+	local rightHand = player.Character and player.Character:FindFirstChild("RightHand")
+	if not rightHand then return end
+
+	local weld = cloneModel:FindFirstChildOfClass("Weld")
+	if weld then
+		weld.Part1 = cloneModel
+		weld.Part0 = rightHand
+	end
+end
+
+local TARGET_ID = "3732699835"
+local playing = false
+
+local function hookCharacter(character)
+	local humanoid = character:WaitForChild("Humanoid")
+	local animator = humanoid:WaitForChild("Animator")
+
+	animator.AnimationPlayed:Connect(function(track)
+		local anim = track.Animation
+		if anim and anim.AnimationId then
+			local id = string.match(anim.AnimationId, "%d+")
+			if id == TARGET_ID then
+				playing = true
+
+				track.Stopped:Connect(function()
+					playing = false
+				end)
+			end
+		end
+	end)
+end
+
+if player.Character then
+	hookCharacter(player.Character)
+end
+
+player.CharacterAdded:Connect(hookCharacter)
+
+task.spawn(function()
+	while true do
+		task.wait(0.1)
+
+		local wrap = workspace:FindFirstChild("HWRAP_" .. player.Name)
+		if not wrap then
+			if cloneModel then
+				cloneModel:Destroy()
+				cloneModel = nil
+			end
+			continue
+		end
+
+		local gun = wrap:FindFirstChild("Gun")
+		if not gun then
+			if cloneModel then
+				cloneModel:Destroy()
+				cloneModel = nil
+			end
+			continue
+		end
+
+		local real = gun:GetAttribute("Real")
+
+		if not real or not string.find(string.lower(real), "knife") then
+			if cloneModel then
+				cloneModel:Destroy()
+				cloneModel = nil
+			end
+			continue
+		end
+
+		setGunInvisible(gun)
+
+		if not cloneModel then
+			attach(wrap)
+		end
+
+		local character = player.Character
+		if cloneModel then
+			if playing then
+				--applyOriginal(cloneModel)
+			else
+				--hideModel(cloneModel)
+			end
+		end
+	end
+end)
+
+local player = Players.LocalPlayer
+local TopRight = player:WaitForChild("PlayerGui"):WaitForChild("GUI"):WaitForChild("TopRight")
+local KillIcons = ReplicatedStorage:WaitForChild("KillIcons")
+
+local imageMap = {}
+
+for _, melee in ipairs(meleeChoices) do
+	local nameObj = KillIcons:FindFirstChild(melee.Name)
+	local switchObj = KillIcons:FindFirstChild(melee.Switch)
+
+	if nameObj and switchObj then
+		local switchId = switchObj.Value:match("%d+")
+		local nameId = nameObj.Value:match("%d+")
+
+		if switchId and nameId then
+			imageMap[switchId] = "rbxassetid://" .. nameId
+		end
+	end
+end
+
+local function hookFrame(frame)
+	if not frame:IsA("Frame") then return end
+
+	local killer = frame:WaitForChild("Killer", 2)
+	local pic = frame:WaitForChild("Pic", 2)
+
+	if not killer or not pic then return end
+
+	local function update()
+		if killer.Text ~= player.Name then return end
+
+		local currentId = pic.Image:match("%d+")
+		if not currentId then return end
+
+		local replacement = imageMap[currentId]
+		if replacement then
+			pic.Image = replacement
+		end
+	end
+	killer:GetPropertyChangedSignal("Text"):Connect(update)
+	pic:GetPropertyChangedSignal("Image"):Connect(update)
+	update()
+end
+for _, frame in ipairs(TopRight:GetChildren()) do
+	hookFrame(frame)
+end
+TopRight.ChildAdded:Connect(function(frame)
+	hookFrame(frame)
+end)
